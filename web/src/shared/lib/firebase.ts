@@ -13,12 +13,33 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Firebase 앱 초기화 (중복 초기화 방지)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+// 환경 변수 검증 함수
+const isConfigValid = () => {
+  return !!(
+    firebaseConfig.apiKey &&
+    firebaseConfig.authDomain &&
+    firebaseConfig.projectId &&
+    firebaseConfig.storageBucket &&
+    firebaseConfig.appId
+  );
+};
 
-// Firebase 서비스 인스턴스
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+// Firebase 앱 초기화 (환경 변수가 있을 때만)
+let app;
+let auth;
+let db;
+let storage;
 
+// 빌드 타임에는 초기화하지 않음 (typeof window로 브라우저 환경 체크)
+if (typeof window !== 'undefined' && isConfigValid()) {
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+} else if (!isConfigValid() && typeof window !== 'undefined') {
+  console.error('Firebase 환경 변수가 설정되지 않았습니다. Vercel 환경 변수를 확인하세요.');
+}
+
+// Firebase 서비스 인스턴스 export
+export { auth, db, storage };
 export default app;
